@@ -80,6 +80,11 @@ def idcg(df_retrieved, query):
             pass
 
 
+def ndcg():
+    # todo
+    pass
+
+
 def mrr_score(df_retrieved, query):
     q = 0
     k = df_retrieved.shape[0]
@@ -88,3 +93,13 @@ def mrr_score(df_retrieved, query):
             q += 1 / i
     q = q / k
     return q
+
+
+def plot_prec_rec():
+    '''
+    idk a function that creates a precision recall plot
+    :return: a precision recall plot
+    '''
+    # todo
+    pass
+
