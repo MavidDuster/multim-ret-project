@@ -64,5 +64,3 @@ subset100 = create_query_set(100, df_song_info)
 
 #rel = rel_set(query_id, df_song_info)  # get all ids of relevant songs
 
-print(prec(rel, retrieved_tf_idf_cosine_sim["id"]))
-print(recall(rel, retrieved_tf_idf_cosine_sim["id"]))
