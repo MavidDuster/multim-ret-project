@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+from tqdm import tqdm
+from model import retrieve
 
 
 def get_song_genre(song_id, df_song_info):
@@ -9,12 +11,12 @@ def get_song_genre(song_id, df_song_info):
 
 
 def relevance(query, retrieved_id, df_song_info):
-    '''
+    """
     Returns relevance rating from 0-4, 0 [irrelevant]…4 [highly rel.])
-    '''
+    """
     id_query = list(df_song_info.loc[df_song_info["song"] == query]["id"])[0]
-    q_genres = get_song_genre(id_query)
-    r_genres = get_song_genre(retrieved_id)
+    q_genres = get_song_genre(id_query, df_song_info)
+    r_genres = get_song_genre(retrieved_id, df_song_info)
     intersec = len(set(q_genres).intersection(set(r_genres)))
 
     # relevance grades assinged by user (as said in slides)
@@ -72,6 +74,7 @@ def dcg_at_k(df_retrieved, query):
     return dcg
 
 
+
 def idcg(df_retrieved, query):
     # ndcg normalized discounted cumulative gain score [0, 1]
     idcg = 0
@@ -79,10 +82,6 @@ def idcg(df_retrieved, query):
         if relevance(query, item) == 4:
             pass
 
-
-def ndcg():
-    # todo
-    pass
 
 
 def mrr_score(df_retrieved, query):
@@ -93,6 +92,25 @@ def mrr_score(df_retrieved, query):
             q += 1 / i
     q = q / k
     return q
+
+
+def eval_routine(query_set, ret_method, df_song_info, top_k):
+    avg_prec = 0
+    avg_mrr = 0
+    avg_ndcg = 0
+
+    for query in tqdm(query_set, total=len(query_set)):
+        # retrieve items
+        ret = retrieve(query, df_song_info, ret_method, top_k)
+
+
+
+
+
+
+
+
+    return avg_prec, avg_mrr, avg_ndcg
 
 
 def plot_prec_rec():

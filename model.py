@@ -1,11 +1,10 @@
 import pandas as pd
 import numpy as np
-from tqdm import tqdm
 from sklearn.metrics.pairwise import cosine_similarity
 
 
-def baseline_retrival(query, df_song_inf, df_lyric_rep, top_k=5):
-    '''
+def retrieval_model(query, df_song_inf, df_lyric_rep):
+    """
     given a song this function returns a list of song IDs with similar lyrics
 
     query - String of song name
@@ -14,7 +13,7 @@ def baseline_retrival(query, df_song_inf, df_lyric_rep, top_k=5):
     top_k - Int - number of neighbors to query song (default 5)
 
     returns - Data Frame - (song ID: similarity) sorted by most similar to least
-    '''
+    """
     df_rep = df_lyric_rep.copy(deep=True)
     # get songID of query
     id_query = list(df_song_inf.loc[df_song_inf["song"] == query]["id"])[0]
@@ -33,9 +32,16 @@ def baseline_retrival(query, df_song_inf, df_lyric_rep, top_k=5):
     closest_items = pd.DataFrame(df_rep['id'])
     closest_items["cos_sim"] = cosine_sim
 
-    # Taking K most similar items
     closest_items = closest_items.sort_values('cos_sim', ascending=False)
-    return closest_items[1:top_k + 1]  # exclude the first one as it is the query song itself
+    return closest_items[1:]  # exclude the first one as it is the query song itself
+
+
+def retrieve(query, df_song_inf, modality_path, top_k):
+    modality = pd.read_csv(filepath_or_buffer=modality_path, delimiter="\t")
+    retrieved = retrieval_model(query, df_song_inf, modality)
+    return retrieved
+
+
 
 
 
