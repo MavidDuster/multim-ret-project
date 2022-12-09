@@ -30,6 +30,7 @@ print(f'Average Number of genres per track is {round(genres["genre"].str.len().m
 print()
 
 # todo average number of tracks that share one genre
+# use one hot encoding
 list_inter = []
 total_size = len(genres)
 for qset in tqdm(genres["genre"], total=total_size):
@@ -45,5 +46,5 @@ for qset in tqdm(genres["genre"], total=total_size):
 avg_intersec = sum(list_inter)/len(list_inter)
 print(f'Average number of tracks that share one genre is {avg_intersec}.')
 
-# todo whatever else we can think of
+# total number of genres
 

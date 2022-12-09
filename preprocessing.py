@@ -55,7 +55,8 @@ def relevance(id_query, retrieved_id, df_song_info):
     else:
         return 1
 
-# todo precomute all relevances for all songs
+
+# todo precompute all relevance's for all songs
 def create_relevance_matrix(df_song_info):
     """
     each row and col are a song and its entry is the relevance grade it received
@@ -71,6 +72,6 @@ def create_relevance_matrix(df_song_info):
         pass
 
 
-#idx_m, matrix = create_relevance_matrix(genres)
+# idx_m, matrix = create_relevance_matrix(genres)
 df = df_song_info["id"]
 print(df.head())

@@ -2,13 +2,13 @@
 import pandas as pd
 import numpy as np
 from model import retrieval_model, retrieve
-from evaluation import get_song_genre, relevance, rel_set, recall, prec
+from evaluation import get_song_genre, relevance, recall, prec, eval_routine
 from ast import literal_eval
 from sklearn.metrics import PrecisionRecallDisplay
 
 # data import
-genres = pd.read_csv('./data/id_genres_mmsr.tsv', delimiter='\t')
-information_mmsr = pd.read_csv('./data/id_information_mmsr.tsv', delimiter='\t')
+genres = pd.read_csv('./data/id_genres_mmsr.tsv', delimiter='\t', index_col="id")
+information_mmsr = pd.read_csv('./data/id_information_mmsr.tsv', delimiter='\t', index_col="id")
 
 # lyric data
 id_tfidf = "./data/id_lyrics_tf-idf_mmsr.tsv"
@@ -20,15 +20,17 @@ id_blf_correlation = "./data/id_blf_correlation_mmsr.tsv"
 id_resnet = "./data/id_resnet_mmsr.tsv"
 id_vgg19 = "./data/id_vgg19_mmsr.tsv"
 
-
-
 genres['genre'] = genres['genre'].apply(literal_eval)
 df_song_info = information_mmsr.join(genres['genre'])
+df_song_info["genre_set"] = df_song_info["genre"].apply(set)
 
+
+# print(df_song_info["song"])
 # for testing
-query = "Flames of Revenge"
-query_id = list(df_song_info.loc[df_song_info["song"] == query]["id"])[0]
+# query = "Flames of Revenge"
+# query_id = list(df_song_info.loc[df_song_info["song"] == query]["id"])[0]
 top_k = 10
+
 
 # testing retrieve items
 # baseline_tf_idf_cosine_sim = retrieve(query, information_mmsr, id_tfidf, top_k)
@@ -45,7 +47,7 @@ top_k = 10
 # print("VGG19 with cosine is done")
 
 
-# create a subset of queries
+# create a random subset of queries with size k
 def create_query_set(k, df_song_info):
     q_list = np.random.randint(0, len(df_song_info), size=k)
     query_set = []
@@ -54,13 +56,10 @@ def create_query_set(k, df_song_info):
     return query_set
 
 
-subset100 = create_query_set(100, df_song_info)
+subset100 = create_query_set(10, df_song_info)
 
-# evaluation
-
-
+# run evaluation routine
+print(eval_routine(subset100, id_tfidf, df_song_info, top_k))
 
 # get precison / recall plot of baseline retrieval system (from task1)
-
-#rel = rel_set(query_id, df_song_info)  # get all ids of relevant songs
-
+# rel = rel_set(query_id, df_song_info)  # get all ids of relevant songs
