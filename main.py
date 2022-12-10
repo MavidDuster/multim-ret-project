@@ -2,7 +2,7 @@
 import pandas as pd
 import numpy as np
 from model import retrieval_model, retrieve
-from evaluation import get_song_genre, relevance, recall, prec, eval_routine
+from evaluation import get_song_genre, relevance, recall, prec, eval_routine, get_rel_set
 from ast import literal_eval
 from sklearn.metrics import PrecisionRecallDisplay
 
@@ -20,15 +20,15 @@ id_blf_correlation = "./data/id_blf_correlation_mmsr.tsv"
 id_resnet = "./data/id_resnet_mmsr.tsv"
 id_vgg19 = "./data/id_vgg19_mmsr.tsv"
 
+# merge dfs and processes genre column
 genres['genre'] = genres['genre'].apply(literal_eval)
 df_song_info = information_mmsr.join(genres['genre'])
 df_song_info["genre_set"] = df_song_info["genre"].apply(set)
 
-
 # print(df_song_info["song"])
 # for testing
-# query = "Flames of Revenge"
-# query_id = list(df_song_info.loc[df_song_info["song"] == query]["id"])[0]
+query = "Flames of Revenge"
+query_id = df_song_info.loc[df_song_info["song"] == query].index[0]
 top_k = 10
 
 
@@ -56,10 +56,27 @@ def create_query_set(k, df_song_info):
     return query_set
 
 
-subset100 = create_query_set(10, df_song_info)
+subset1000 = create_query_set(1000, df_song_info)
 
 # run evaluation routine
-print(eval_routine(subset100, id_tfidf, df_song_info, top_k))
+print("Using tf-idf")
+print(eval_routine(subset1000, id_tfidf, df_song_info, top_k))
+
+print("Using bert")
+print(eval_routine(subset1000, id_bert, df_song_info, top_k))
+
+print("Using blf_spectral")
+print(eval_routine(subset1000, id_blf_spectral, df_song_info, top_k))
+
+print("Using blf_correlation")
+print(eval_routine(subset1000, id_blf_correlation, df_song_info, top_k))
+
+print("Using resnet")
+print(eval_routine(subset1000, id_resnet, df_song_info, top_k))
+
+print("Using vgg19")
+print(eval_routine(subset1000, id_vgg19, df_song_info, top_k))
+
 
 # get precison / recall plot of baseline retrieval system (from task1)
 # rel = rel_set(query_id, df_song_info)  # get all ids of relevant songs

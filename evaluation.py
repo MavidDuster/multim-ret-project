@@ -14,11 +14,10 @@ def get_song_id(query, df_song_info):
     return df_song_info.loc[df_song_info["song"] == query].index[0]
 
 
-def relevance(id_query, retrieved_id, df_song_info):
+def relevance(retrieved_id, q_genres, df_song_info):
     """
     Returns relevance rating from 0-4, 0 [irrelevant]…4 [highly rel.])
     """
-    q_genres = df_song_info["genre_set"].loc[id_query]
     r_genres = df_song_info["genre_set"].loc[retrieved_id]
     intersec = len(q_genres.intersection(r_genres))
 
@@ -27,26 +26,26 @@ def relevance(id_query, retrieved_id, df_song_info):
     prec = intersec / len(q_genres)
     if prec == 0:
         return 0
-    if prec == 1:
+    if prec > 0.8:
         return 4
-    if 0.75 < prec < 1:
+    if 0.6 < prec <= 0.8:
         return 3
-    if 0.25 < prec <= 0.75:
+    if 0.25 < prec <= 0.6:
         return 2
     else:
         return 1
 
 
-# def rel_set(song_id, df_song_info):
-#     # go over all songs and create set of relevant songs
-#     qgenre = get_song_genre(song_id, df_song_info)
-#     rel_ids = []
-#
-#     for id, genres in zip(df_song_info["id"], df_song_info["genre"]):
-#         # if genre is matching the song is relevant
-#         if bool(set(qgenre).intersection(set(genres))):
-#             rel_ids.append(id)
-#     return rel_ids
+def get_rel_set(song_id, df_song_info):
+    # go over all songs and create set of relevant songs
+    qgenre = get_song_genre(song_id, df_song_info)
+    print(qgenre)
+    rel = pd.DataFrame(index=df_song_info.index)
+    rel["rel_grade"] = rel.apply(
+        lambda row: relevance(retrieved_id=row.name, q_genres=qgenre, df_song_info=df_song_info), axis=1)
+    print(rel["rel_grade"].unique())
+    return rel
+
 
 def prec(rel, ret):
     return len(set(rel).intersection(set(ret))) / len(rel)
@@ -87,54 +86,64 @@ def mrr_score(df_retrieved, query, df_song_info):
 
 
 def eval_helper(df_retrieved, q_idx, df_song_info, top_k):
-    rel = 0
+    hits = 0
     dcg = 0
     q = 0
-
     # todo change eval function such that they match slides
-    for i, item in enumerate(df_retrieved["id"]):
-        if relevance(q_idx, item, df_song_info) != 0:
-            rel += 1
+    for i, item in enumerate(df_retrieved["id"].head(top_k)):
+        q_genre = df_song_info["genre_set"].loc[q_idx]
+        rel = relevance(item, q_genre, df_song_info)
+        if rel != 0:
+            hits += 1
             if i > 0:
                 q += 1 / i
         if i == 0:
-            dcg += relevance(q_idx, item, df_song_info)
+            dcg += rel
         else:
-            dcg += relevance(q_idx, item, df_song_info) / np.log(i + 1)
+            dcg += rel / np.log2(i + 1)
 
     q = q / top_k
-    rel = rel / top_k
+    hits = hits / top_k
+    idcg = 0
+    # assuming that there are surley 100 relevant song the idcg will converge to the same value
+    if top_k is 10:
+        idcg = 28.5518
+    if top_k is 100:
+        idcg = 123.966
 
-    return rel, dcg, q
+    return hits, dcg / idcg, q
 
 
 def eval_routine(query_set, ret_method, df_song_info, top_k):
     prec = []
     mrr = []
-    ndcg = []
+    ndcgs = []
 
     # go over set of song
     print(f'Current Set contains {len(query_set)} queries')
+    print(f'top_k = {top_k}')
     for query in tqdm(query_set):
         # get id of query
         q_idx = get_song_id(query, df_song_info)
         # retrieve items
         ret = retrieve(q_idx, df_song_info, ret_method, top_k)
+        # get set of relevant songs given the query
+        # rel = get_rel_set(q_idx, df_song_info)
         # evaluate the retrieval based on its used feature
         # todo
-        precision, dcg, q = eval_helper(ret, q_idx, df_song_info, top_k)
+        precision, ndcg, q = eval_helper(ret, q_idx, df_song_info, top_k)
 
         prec.append(precision)
-        ndcg.append(dcg)
+        ndcgs.append(ndcg)
         mrr.append(q)
 
     avg_prec = sum(prec) / len(query_set)
     avg_mrr = sum(mrr) / len(query_set)
-    avg_ndcg = sum(ndcg) / len(query_set)
+    avg_ndcg = sum(ndcgs) / len(query_set)
 
     print(f'The average precison @ {top_k} is {avg_prec}')
     print(f'The average MRR @ {top_k} is {avg_mrr}')
-    print(f'The average nDCG @ {top_k} is {avg_ndcg}')
+    print(f'The average nDCG @ {top_k} is {avg_ndcg}\n')
     return avg_prec, avg_mrr, avg_ndcg
 
 
