@@ -192,3 +192,15 @@ def plot_prec_rec():
     plt.legend()
     plt.show()
     
+    
+    
+    
+    
+# create a dataframe for evaluation
+data = {'AP': ['x', 'y', 'z', 'w','m'],
+        'MRR': [99, 98, 95, 90,97],
+        'NDCG':[99, 98, 95, 90,97]}
+
+df_evaluate = pd.DataFrame(data, index=['M1','M2','M3','M4','M5'])
+df_evaluate
+    
