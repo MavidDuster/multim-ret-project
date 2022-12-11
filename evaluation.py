@@ -148,10 +148,18 @@ def eval_routine(query_set, ret_method, df_song_info, top_k):
 
 
 def plot_prec_rec():
-    """
-    IDK a function that creates a precision recall plot
-    :return: a precision recall plot
-    """
-
-    # todo
-    pass
+    # x,y are array
+    #
+    #
+    #ptfidf, rtfidf, ptfidf_max = precision(top_cosine_tfidf, 100)
+    #pw2v, rw2v, pw2v_max = precision(top_cosine_word2vec, 100)
+    #pmfcc, rmfcc, pmfcc_max = precision(top_cosine_mfcc_bow, 100)
+    #
+    
+    plt.plot(np.mean(rtfidf, axis=0), np.mean(ptfidf_max, axis=0), color='r', label='tf_id cosine')
+    plt.plot(np.mean(rw2v, axis=0), np.mean(pw2v_max, axis=0), color='g', label='word2vec cosine')
+    plt.plot(np.mean(rmfcc, axis=0), np.mean(pmfcc_max, axis=0), color='b', label='mfcc cosine')
+    plt.grid()
+    plt.legend()
+    plt.show()
+    
