@@ -1,15 +1,16 @@
 # used to precompute the data before moving on
+import csv
 
 import pandas as pd
 from evaluation import get_song_genre
 import numpy as np
 from tqdm import tqdm
+from ast import literal_eval
 
 # load data into
 
-# bert_mmsr = pd.read_csv('./data/id_bert_mmsr.tsv', delimiter='\t')
-# bert_mmsr = pd.read_csv('./data/id_bert_mmsr.tsv', delimiter='\t')
 genres = pd.read_csv('./data/id_genres_mmsr.tsv', delimiter='\t')
+information_mmsr = pd.read_csv('./data/id_information_mmsr.tsv', delimiter='\t', index_col="id")
 
 
 # information_mmsr = pd.read_csv('./data/id_information_mmsr.tsv', delimiter='\t')
@@ -19,7 +20,57 @@ genres = pd.read_csv('./data/id_genres_mmsr.tsv', delimiter='\t')
 
 # todo PCA/LSA @david
 # create a method that reduces the dimensionallity of our feature set
-#
+
+def check_consitency(df_song_info, df_data):
+    """
+    remove all songs which dont have a genre
+    :param df_song_info: to check if it has genre
+    :param df_data: used in retrival
+    """
+    match = set(df_song_info.index).intersection(df_data.index)
+    missmatch = len(df_data) - len(match)
+    print(f'Missmatch of size {missmatch} found!')
+    df_data = df_data.loc[match]
+    return df_data, missmatch
+
+
+def save_df_as_tsv(path, df):
+    df.to_csv(path, sep='\t')
+    print("File saved!")
+
+
+def check_data_genre(list_paths, df_song_info):
+    for path in list_paths:
+        df_data = pd.read_csv(path, delimiter='\t', index_col="id")
+        df_data, m = check_consitency(df_song_info, df_data)
+        if m != 0:
+            save_df_as_tsv(path, df_data)
+
+
+def run_check():
+    """
+    remove all entries for which we dont have genres avilable
+    :return:
+    """
+    genres = pd.read_csv('./data/id_genres_mmsr.tsv', delimiter='\t', index_col="id")
+    information_mmsr = pd.read_csv('./data/id_information_mmsr.tsv', delimiter='\t', index_col="id")
+
+    genres['genre'] = genres['genre'].apply(literal_eval)
+    df_song_info = information_mmsr.join(genres['genre'])
+
+    id_tfidf = "./data/id_lyrics_tf-idf_mmsr.tsv"
+    id_bert = "./data/id_bert_mmsr.tsv"
+    # audio data
+    id_blf_spectral = "./data/id_blf_spectral_mmsr.tsv"
+    id_blf_correlation = "./data/id_blf_correlation_mmsr.tsv"
+    # image data
+    id_resnet = "./data/id_resnet_mmsr.tsv"
+    id_vgg19 = "./data/id_vgg19_mmsr.tsv"
+
+    list_paths =[id_tfidf, id_bert, id_blf_spectral, id_blf_correlation, id_resnet, id_vgg19]
+    check_data_genre(list_paths, df_song_info)
+
+
 
 def rel_set(song_id, df_song_info):
     # go over all songs and create set of relevant songs
@@ -72,6 +123,20 @@ def create_relevance_matrix(df_song_info):
         pass
 
 
+def create_query_set(k, df_song_info):
+    q_list = np.random.randint(0, len(df_song_info), size=k)
+    query_set = []
+    for i in q_list:
+        query_set.append(df_song_info["song"][i])
+    # todo save that set and load it such that all evals use the same set
+    with open(f'sample_{k}.txt', 'w', encoding='utf-8') as f:
+        for s in query_set:
+            f.write(str(s) + '\n')
+
+
+# run_check()
+# create_query_set(100, information_mmsr)
+# create_query_set(1000, information_mmsr)
+# create_query_set(10000, information_mmsr)
+
 # idx_m, matrix = create_relevance_matrix(genres)
-df = df_song_info["id"]
-print(df.head())

@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 from model import retrieve
+from scipy.stats import spearmanr
 
 
 def get_song_genre(song_id, df_song_info):
@@ -56,41 +57,27 @@ def recall(rel, ret):
 
 
 # evaluation metrics used for testing
-def precision_at_k(df_retrieved, query, df_song_info):
-    k = df_retrieved.shape[0]
-    rel = 0
-    for item in df_retrieved["id"]:
-        if relevance(query, item, df_song_info) != 0:
-            rel += 1
-    return rel / k
-
-
-
-def precision_at_k(dfTopIds, topNumber):
-    
+def precision_at_k(dfTopIds, topNumber, genres):
     precision = np.zeros((dfTopIds.shape[0], topNumber))
     recall = np.zeros((dfTopIds.shape[0], topNumber))
     precision_max = np.zeros((dfTopIds.shape[0], topNumber))
-    
-    for idx,queryId in tqdm(enumerate(dfTopIds.index.values)):
-        
+
+    for idx, queryId in tqdm(enumerate(dfTopIds.index.values)):
+
         topIds = dfTopIds.loc[queryId].values[:topNumber]
         querySongGenres = genres.loc[[queryId], 'genre'].values[0]
         topSongsGenres = genres.loc[topIds, 'genre'].values
         relevant_results = [isResultRelevant(querySongGenres, songGenre) for songGenre in topSongsGenres]
         REL = np.sum(relevant_results)
 
-        if REL != 0: # Case when there is no relevant result in the top@K
-#             P[idx] = [(np.sum(relevant_results[:i+1]) / (i+1)) for i in range(topNumber)]
-            precision[idx] = np.divide(np.cumsum(relevant_results,axis=0), np.arange(1,topNumber+1))
-#             R[idx] = [(np.sum(relevant_results[:i+1]) / (REL)) for i in range(topNumber)]
-            recall[idx] = np.divide(np.cumsum(relevant_results,axis=0), REL)
-            precision_max[idx] = [ np.max(precision[idx,i:]) for i,val in enumerate(precision[idx])]
+        if REL != 0:  # Case when there is no relevant result in the top@K
+            # P[idx] = [(np.sum(relevant_results[:i+1]) / (i+1)) for i in range(topNumber)]
+            precision[idx] = np.divide(np.cumsum(relevant_results, axis=0), np.arange(1, topNumber + 1))
+            # R[idx] = [(np.sum(relevant_results[:i+1]) / (REL)) for i in range(topNumber)]
+            recall[idx] = np.divide(np.cumsum(relevant_results, axis=0), REL)
+            precision_max[idx] = [np.max(precision[idx, i:]) for i, val in enumerate(precision[idx])]
 
     return precision, recall, precision_max
-
-
-
 
 
 def ndcg_at_k(df_retrieved, q_idx, df_song_info):
@@ -142,6 +129,23 @@ def eval_helper(df_retrieved, q_idx, df_song_info, top_k):
     return hits, dcg / idcg, q
 
 
+def pairwise_corr(ret_df1, ret_df2):
+    rho, p = spearmanr(ret_df1["cos_sim"], ret_df2["cos_sim"])
+    return rho, p
+
+
+def corr_matrix(baseline, m1, m2, m3, m4, m5):
+    ret_list = [baseline, m1, m2, m3, m4, m5]
+    corr = []
+    for ret_df1 in ret_list:
+        temp = []
+        for ret_df2 in ret_list:
+            rho, p = pairwise_corr(ret_df1, ret_df2)
+            temp.append((rho, p))
+        corr.append(temp)
+
+    return corr
+
 def eval_routine(query_set, ret_method, df_song_info, top_k):
     prec = []
     mrr = []
@@ -154,7 +158,7 @@ def eval_routine(query_set, ret_method, df_song_info, top_k):
         # get id of query
         q_idx = get_song_id(query, df_song_info)
         # retrieve items
-        ret = retrieve(q_idx, df_song_info, ret_method, top_k)
+        ret = retrieve(q_idx, df_song_info, ret_method)
         # get set of relevant songs given the query
         # rel = get_rel_set(q_idx, df_song_info)
         # evaluate the retrieval based on its used feature
@@ -175,32 +179,18 @@ def eval_routine(query_set, ret_method, df_song_info, top_k):
     return avg_prec, avg_mrr, avg_ndcg
 
 
-def plot_prec_rec():
+def plot_prec_rec(m1, m2, m3, top_k, df_song_info):
     # 
-    #def precision_at_k  shuold return (precision, recall, precision_max)
-    #we need to _ precision, recall, precision_max
+    # def precision_at_k  shuold return (precision, recall, precision_max)
+    # we need to _ precision, recall, precision_max
     #
-    #ptfidf, rtfidf, ptfidf_max = precision_at_k(top_cosine_tfidf, 100)
-    #pw2v, rw2v, pw2v_max = precision_at_k(top_cosine_word2vec, 100)
-    #pmfcc, rmfcc, pmfcc_max = precision_at_k(top_cosine_mfcc, 100)
-    #
-    
+    ptfidf, rtfidf, ptfidf_max = precision_at_k(m1, top_k, df_song_info)
+    pw2v, rw2v, pw2v_max = precision_at_k(m2, top_k, df_song_info)
+    pmfcc, rmfcc, pmfcc_max = precision_at_k(m3, top_k, df_song_info)
+
     plt.plot(np.mean(rtfidf, axis=0), np.mean(ptfidf_max, axis=0), color='r', label='tf_id cosine')
     plt.plot(np.mean(rw2v, axis=0), np.mean(pw2v_max, axis=0), color='g', label='word2vec cosine')
     plt.plot(np.mean(rmfcc, axis=0), np.mean(pmfcc_max, axis=0), color='b', label='mfcc cosine')
     plt.grid()
     plt.legend()
     plt.show()
-    
-    
-    
-    
-    
-# create a dataframe for evaluation
-data = {'AP': ['x', 'y', 'z', 'w','m'],
-        'MRR': [99, 98, 95, 90,97],
-        'NDCG':[99, 98, 95, 90,97]}
-
-df_evaluate = pd.DataFrame(data, index=['M1','M2','M3','M4','M5'])
-df_evaluate
-    
