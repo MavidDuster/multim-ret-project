@@ -65,6 +65,34 @@ def precision_at_k(df_retrieved, query, df_song_info):
     return rel / k
 
 
+
+def precision_at_k(dfTopIds, topNumber):
+    
+    precision = np.zeros((dfTopIds.shape[0], topNumber))
+    recall = np.zeros((dfTopIds.shape[0], topNumber))
+    precision_max = np.zeros((dfTopIds.shape[0], topNumber))
+    
+    for idx,queryId in tqdm(enumerate(dfTopIds.index.values)):
+        
+        topIds = dfTopIds.loc[queryId].values[:topNumber]
+        querySongGenres = genres.loc[[queryId], 'genre'].values[0]
+        topSongsGenres = genres.loc[topIds, 'genre'].values
+        relevant_results = [isResultRelevant(querySongGenres, songGenre) for songGenre in topSongsGenres]
+        REL = np.sum(relevant_results)
+
+        if REL != 0: # Case when there is no relevant result in the top@K
+#             P[idx] = [(np.sum(relevant_results[:i+1]) / (i+1)) for i in range(topNumber)]
+            precision[idx] = np.divide(np.cumsum(relevant_results,axis=0), np.arange(1,topNumber+1))
+#             R[idx] = [(np.sum(relevant_results[:i+1]) / (REL)) for i in range(topNumber)]
+            recall[idx] = np.divide(np.cumsum(relevant_results,axis=0), REL)
+            precision_max[idx] = [ np.max(precision[idx,i:]) for i,val in enumerate(precision[idx])]
+
+    return precision, recall, precision_max
+
+
+
+
+
 def ndcg_at_k(df_retrieved, q_idx, df_song_info):
     dcg = 0
     for i, item in enumerate(df_retrieved["id"]):
@@ -148,12 +176,13 @@ def eval_routine(query_set, ret_method, df_song_info, top_k):
 
 
 def plot_prec_rec():
-    # x,y are array
+    # 
+    #def precision_at_k  shuold return (precision, recall, precision_max)
+    #we need to _ precision, recall, precision_max
     #
-    #
-    #ptfidf, rtfidf, ptfidf_max = precision(top_cosine_tfidf, 100)
-    #pw2v, rw2v, pw2v_max = precision(top_cosine_word2vec, 100)
-    #pmfcc, rmfcc, pmfcc_max = precision(top_cosine_mfcc_bow, 100)
+    #ptfidf, rtfidf, ptfidf_max = precision_at_k(top_cosine_tfidf, 100)
+    #pw2v, rw2v, pw2v_max = precision_at_k(top_cosine_word2vec, 100)
+    #pmfcc, rmfcc, pmfcc_max = precision_at_k(top_cosine_mfcc, 100)
     #
     
     plt.plot(np.mean(rtfidf, axis=0), np.mean(ptfidf_max, axis=0), color='r', label='tf_id cosine')
