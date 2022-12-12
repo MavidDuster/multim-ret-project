@@ -69,7 +69,7 @@ def heat_map(query_set,top_k):
     
     # Heat map
 
-    average = ["AP", "MRR", "leCG"]
+    average = ["AP", "MRR", "NDCG"]
     models = ["TF-IDF", "BERT", "BLF Spectral","BLF Correlation", "ResNet", "VGG19"]
 
 
