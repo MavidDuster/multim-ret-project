@@ -33,6 +33,18 @@ def retrieval_model(id_query, df_lyric_rep):
     return closest_items[1:]  # exclude the first one as it is the query song itself
 
 
+# simplified version of the above
+def retrieval_model2(df_data, input_query: str, top_k: int = 100):
+    similarity = cosine_similarity(df_data.loc[[input_query]], df_data)[0]
+
+    res = pd.DataFrame(index=df_data.index.tolist())
+    res.index.name = "id"
+    res["cos_sim"] = similarity
+    res.drop([input_query], axis=0, inplace=True)
+
+    return res.nlargest(top_k, "cos_sim")
+
+
 def retrieve(query_id, modality_path):
     # load data into pd
     modality = pd.read_csv(filepath_or_buffer=modality_path, delimiter="\t", index_col="id")
@@ -40,7 +52,3 @@ def retrieve(query_id, modality_path):
     return retrieved
 
 # optionally we could implement PageRank from the slides and see if it yields better results
-
-
-
-

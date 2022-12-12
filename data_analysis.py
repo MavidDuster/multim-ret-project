@@ -7,11 +7,13 @@ import numpy as np
 bert_mmsr = pd.read_csv('./data/id_bert_mmsr.tsv', delimiter='\t')
 genres = pd.read_csv('./data/id_genres_mmsr.tsv', delimiter='\t')
 information_mmsr = pd.read_csv('./data/id_information_mmsr.tsv', delimiter='\t')
-lyrics_tf_idf = pd.read_csv('./data/id_lyrics_tf-idf_mmsr.tsv', delimiter='\t')
-lyrics_w2v = pd.read_csv('./data/id_lyrics_word2vec_mmsr.tsv', delimiter='\t')
+
+
+genres['genre'] = genres['genre'].apply(literal_eval)
+
 
 # turn string to list
-genres['genre'] = genres['genre'].apply(literal_eval)
+
 dff = genres
 dff = dff.explode('genre')
 
@@ -29,22 +31,11 @@ print()
 print(f'Average Number of genres per track is {round(genres["genre"].str.len().mean())}')
 print()
 
-# todo average number of tracks that share one genre
+# average number of tracks that share one genre
 # use one hot encoding
-list_inter = []
-total_size = len(genres)
-for qset in tqdm(genres["genre"], total=total_size):
-    qset = set(qset)
-    intersec = 0
-    # go over all songs and check if genres are intersecting
-    for gset in genres["genre"]:
-        gset = set(gset)
-        if bool(gset.intersection(qset)):
-            intersec +=1
-    list_inter.append(intersec)
+genres1hot = pd.get_dummies(genres.genre.apply(pd.Series), prefix="", prefix_sep="")
+print(f'There are a total of {genres1hot.shape[1]} genres')
+print(f'Average number of songs that share a genre {genres1hot.sum().mean()}')
 
-avg_intersec = sum(list_inter)/len(list_inter)
-print(f'Average number of tracks that share one genre is {avg_intersec}.')
 
-# total number of genres
 
