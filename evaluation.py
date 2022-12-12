@@ -70,10 +70,8 @@ def precision_at_k(dfTopIds, topNumber, genres):
         relevant_results = [isResultRelevant(querySongGenres, songGenre) for songGenre in topSongsGenres]
         REL = np.sum(relevant_results)
 
-        if REL != 0:  # Case when there is no relevant result in the top@K
-            # P[idx] = [(np.sum(relevant_results[:i+1]) / (i+1)) for i in range(topNumber)]
+        if REL != 0:  
             precision[idx] = np.divide(np.cumsum(relevant_results, axis=0), np.arange(1, topNumber + 1))
-            # R[idx] = [(np.sum(relevant_results[:i+1]) / (REL)) for i in range(topNumber)]
             recall[idx] = np.divide(np.cumsum(relevant_results, axis=0), REL)
             precision_max[idx] = [np.max(precision[idx, i:]) for i, val in enumerate(precision[idx])]
 
@@ -179,18 +177,3 @@ def eval_routine(query_set, ret_method, df_song_info, top_k):
     return avg_prec, avg_mrr, avg_ndcg
 
 
-def plot_prec_rec(m1, m2, m3, top_k, df_song_info):
-    # 
-    # def precision_at_k  shuold return (precision, recall, precision_max)
-    # we need to _ precision, recall, precision_max
-    #
-    ptfidf, rtfidf, ptfidf_max = precision_at_k(m1, top_k, df_song_info)
-    pw2v, rw2v, pw2v_max = precision_at_k(m2, top_k, df_song_info)
-    pmfcc, rmfcc, pmfcc_max = precision_at_k(m3, top_k, df_song_info)
-
-    plt.plot(np.mean(rtfidf, axis=0), np.mean(ptfidf_max, axis=0), color='r', label='tf_id cosine')
-    plt.plot(np.mean(rw2v, axis=0), np.mean(pw2v_max, axis=0), color='g', label='word2vec cosine')
-    plt.plot(np.mean(rmfcc, axis=0), np.mean(pmfcc_max, axis=0), color='b', label='mfcc cosine')
-    plt.grid()
-    plt.legend()
-    plt.show()
