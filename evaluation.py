@@ -6,6 +6,7 @@ from scipy.stats import spearmanr
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 
+
 def get_song_genre(song_id, df_song_info):
     # returns a set of genres of the song
     genres = df_song_info["genre_set"].loc[song_id]
@@ -36,6 +37,7 @@ def relevance(retrieved_id, q_genres, df_song_info):
         return 2
     else:
         return 1
+
 
 def get_rel_set_size(input_genres, df_song_info):
     # this is sooo slow
@@ -69,7 +71,7 @@ def precision_at_k(dfTopIds, topNumber, genres):
     return precision, recall, precision_max
 
 
-def precision_score(ret, df_song_info, input_genres, len_rel=6000):
+def precision_score(ret, df_song_info, input_genres, len_rel=27):
     hits = 0
     for index, row in ret.iterrows():
         if len(np.intersect1d(df_song_info.loc[index]["genre"], input_genres)) >= 1:
@@ -122,6 +124,7 @@ def mrr_score(ret, df_song_info, input_genres):
 
     return 1 / q
 
+
 def pairwise_corr(ret_df1, ret_df2):
     rho, p = spearmanr(ret_df1["cos_sim"], ret_df2["cos_sim"])
     return rho, p
@@ -138,9 +141,6 @@ def corr_matrix(baseline, m1, m2, m3, m4, m5):
         corr.append(temp)
 
     return corr
-
-
-
 
 
 def plot_prec_rec(m1, m2, m3, top_k, df_song_info):
@@ -168,7 +168,7 @@ def precision_recall_plot(prec_list, recall_list):
     plt.show()
 
 
-def perf_metrics_improved(df_data, df_song_info, subsample, top_k, dim_red=False):
+def perf_metrics_improved(df_data, df_song_info, subsample, top_k, dim_red=False, n_components=4):
     precision = []
     recall = []
     mrr_sum = 0
@@ -178,7 +178,7 @@ def perf_metrics_improved(df_data, df_song_info, subsample, top_k, dim_red=False
     # apply dim reduction
     if dim_red:
         df_index = df_data.index
-        pca = PCA(n_components=2)
+        pca = PCA(n_components=n_components)
         df_data_red = pca.fit_transform(df_data)
         df_data = pd.DataFrame(data=df_data_red, index=df_index)
         df_data.index.name = "id"

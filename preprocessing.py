@@ -137,6 +137,6 @@ def create_query_set(k, df_song_info):
 # run_check()
 # create_query_set(100, information_mmsr)
 # create_query_set(1000, information_mmsr)
-# create_query_set(10000, information_mmsr)
+# create_query_set(68642, information_mmsr)
 
 # idx_m, matrix = create_relevance_matrix(genres)

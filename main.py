@@ -7,6 +7,7 @@ from ast import literal_eval
 from sklearn.metrics import PrecisionRecallDisplay
 import matplotlib.pyplot as plt
 
+
 def init():
     # data import
     genres = pd.read_csv('./data/id_genres_mmsr.tsv', delimiter='\t', index_col="id")
@@ -35,35 +36,36 @@ def init():
 if __name__ == "__main__":
     # load subset of queries
     df_song_info, data_loc = init()
-    with open("sample_1000.txt", 'r', encoding="utf-8") as f:
-        subset1000 = [line.rstrip('\n') for line in f]
+    with open("sample_10000.txt", 'r', encoding="utf-8") as f:
+        subset = [line.rstrip('\n') for line in f]
 
-    TOP_K = 10
-    # Experiment 1 Baseline:
+    TOP_K = 100
+    # Experiment Eval:
     # print("Baseline Eval:")
-    # print(perf_metrics_improved(data_loc[0], df_song_info, subset1000, TOP_K))
+    # print(perf_metrics_improved(data_loc[0], df_song_info, subset, TOP_K))
     # print()
     #
     # print("Bert Eval:")
-    # print(perf_metrics_improved(data_loc[1], df_song_info, subset1000, TOP_K))
+    # print(perf_metrics_improved(data_loc[1], df_song_info, subset, TOP_K))
     # print()
     #
     # print("BLF Spectral Eval:")
-    # print(perf_metrics_improved(data_loc[2], df_song_info, subset1000, TOP_K))
+    # print(perf_metrics_improved(data_loc[2], df_song_info, subset, TOP_K))
     # print()
     #
     # print("BLF Correlation Eval:")
-    # print(perf_metrics_improved(data_loc[3], df_song_info, subset1000, TOP_K))
+    # print(perf_metrics_improved(data_loc[3], df_song_info, subset, TOP_K))
+    # print()
+    #
+    # print("Resnet Eval:")
+    # print(perf_metrics_improved(data_loc[4], df_song_info, subset, TOP_K, dim_red=True, n_components=40))
+    # print()
+    #
+    # print("VGG19 Eval:")
+    # print(perf_metrics_improved(data_loc[4], df_song_info, subset, TOP_K, dim_red=True, n_components=40))
     # print()
 
-    print("Resnet Eval:")
-    print(perf_metrics_improved(data_loc[4], df_song_info, subset1000, TOP_K, dim_red=True))
-    print()
-
-    print("VGG19 Eval:")
-    print(perf_metrics_improved(data_loc[4], df_song_info, subset1000, TOP_K, dim_red=True))
-    print()
-
+    # Prec/Recall Plot
 
     # # testing retrieve items
     # baseline = retrieve(query_id, id_tfidf)
@@ -79,36 +81,32 @@ if __name__ == "__main__":
     # m5= retrieve(query_id, id_vgg19)
     # print("VGG19 with cosine is done")
 
+    # checking pairwise correlation
+    # correlation coeff always 1 (almost 1) idk why
+    # print(corr_matrix(baseline, m1, m2, m3, m4, m5))
 
-# checking pairwise correlation
-# correlation coeff always 1 (almost 1) idk why
-#print(corr_matrix(baseline, m1, m2, m3, m4, m5))
 
-
-    
-def heat_map(query_set,top_k):
+def heat_map(query_set, top_k):
     ap_Base, mrr_Base, ndcg_Base = eval_routine(query_set, baseline['cos_sim'], df_song_info, top_k)
     ap_M1, mrr_M1, ndcg_M1 = eval_routine(query_set, m1['cos_sim'], df_song_info, top_k)
     ap_M2, mrr_M2, ndcg_M2 = eval_routine(query_set, m2['cos_sim'], df_song_info, top_k)
     ap_M3, mrr_M3, ndcg_M3 = eval_routine(query_set, m3['cos_sim'], df_song_info, top_k)
     ap_M4, mrr_M4, ndcg_M4 = eval_routine(query_set, m4['cos_sim'], df_song_info, top_k)
     ap_M5, mrr_M5, ndcg_M5 = eval_routine(query_set, m5['cos_sim'], df_song_info, top_k)
-    
+
     # Heat map
 
     average = ["AP", "MRR", "NDCG"]
-    models = ["TF-IDF", "BERT", "BLF Spectral","BLF Correlation", "ResNet", "VGG19"]
-
+    models = ["TF-IDF", "BERT", "BLF Spectral", "BLF Correlation", "ResNet", "VGG19"]
 
     arr_base = [ap_Base, mrr_Base, ndcg_Base]
-    arr_m1   = [ap_M1, mrr_M1, ndcg_M1]
-    arr_m2   = [ap_M2, mrr_M2, ndcg_M2]
-    arr_m3   = [ap_M3, mrr_M3, ndcg_M3]
-    arr_m4   = [ap_M4, mrr_M4, ndcg_M4]
-    arr_m5   = [ap_M5, mrr_M5, ndcg_M5]
+    arr_m1 = [ap_M1, mrr_M1, ndcg_M1]
+    arr_m2 = [ap_M2, mrr_M2, ndcg_M2]
+    arr_m3 = [ap_M3, mrr_M3, ndcg_M3]
+    arr_m4 = [ap_M4, mrr_M4, ndcg_M4]
+    arr_m5 = [ap_M5, mrr_M5, ndcg_M5]
 
-    heat = np.array([arr_base,arr_m1,arr_m2,arr_m3,arr_m4,arr_m5])
-
+    heat = np.array([arr_base, arr_m1, arr_m2, arr_m3, arr_m4, arr_m5])
 
     fig, ax = plt.subplots()
     im = ax.imshow(heat)
@@ -127,11 +125,8 @@ def heat_map(query_set,top_k):
 
     ax.set_title("Evaluation Heat Map")
     fig.tight_layout()
-    plt.show()   
-    
-    
-    
-    
+    plt.show()
+
 # heat_map("Can You Feel My Heart",10)
 # heat_map("Can You Feel My Heart",100)
 #
@@ -155,17 +150,7 @@ def heat_map(query_set,top_k):
 # plt.title('Precision versus Recall')
 # plt.show()
 #
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
 
 # run evaluation routine
 # print("Using tf-idf")
@@ -187,7 +172,7 @@ def heat_map(query_set,top_k):
 # print(eval_routine(subset1000, id_vgg19, df_song_info, top_k))
 
 
-#plot_prec_rec(re, m2, m3, top_k)
+# plot_prec_rec(re, m2, m3, top_k)
 
 # get precision / recall plot of baseline retrieval system (from task1)
 # rel = rel_set(query_id, df_song_info)  # get all ids of relevant songs
