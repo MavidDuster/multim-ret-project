@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from sklearn.decomposition import PCA
 from sklearn.metrics.pairwise import cosine_similarity
 
 
@@ -45,10 +46,17 @@ def retrieval_model2(df_data, input_query: str, top_k: int = 100):
     return res.nlargest(top_k, "cos_sim")
 
 
-def retrieve(query_id, modality_path):
+def retrieve(query_id, modality_path, top_k, dim_red=False):
     # load data into pd
     modality = pd.read_csv(filepath_or_buffer=modality_path, delimiter="\t", index_col="id")
-    retrieved = retrieval_model(query_id, modality)
+    if dim_red:
+        df_index = modality.index
+        pca = PCA(n_components=40)
+        df_data_red = pca.fit_transform(modality)
+        modality = pd.DataFrame(data=df_data_red, index=df_index)
+        modality.index.name = "id"
+
+    retrieved = retrieval_model2(modality, query_id, top_k)
     return retrieved
 
 # optionally we could implement PageRank from the slides and see if it yields better results

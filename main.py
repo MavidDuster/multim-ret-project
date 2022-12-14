@@ -1,11 +1,12 @@
 # imports
 import pandas as pd
 import numpy as np
-from model import retrieval_model, retrieve
-from evaluation import plot_prec_rec, pairwise_corr, corr_matrix, perf_metrics_improved
+from model import retrieval_model2, retrieve
+from evaluation import plot_prec_rec, pairwise_corr, corr_matrix, perf_metrics_improved, get_song_id
 from ast import literal_eval
 from sklearn.metrics import PrecisionRecallDisplay
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 def init():
@@ -36,7 +37,7 @@ def init():
 if __name__ == "__main__":
     # load subset of queries
     df_song_info, data_loc = init()
-    with open("sample_10000.txt", 'r', encoding="utf-8") as f:
+    with open("sample_1000.txt", 'r', encoding="utf-8") as f:
         subset = [line.rstrip('\n') for line in f]
 
     TOP_K = 100
@@ -81,7 +82,37 @@ if __name__ == "__main__":
     # m5= retrieve(query_id, id_vgg19)
     # print("VGG19 with cosine is done")
 
-    # checking pairwise correlation
+    # experimenting with pairwise correlation
+    test_query = "Can You Feel My Heart"
+    test_id = get_song_id(test_query, df_song_info)
+    b = retrieve(test_id, data_loc[0], TOP_K)
+    m1 = retrieve(test_id, data_loc[1], TOP_K)
+    m2 = retrieve(test_id, data_loc[2], TOP_K)
+    m3 = retrieve(test_id, data_loc[3], TOP_K)
+    m4 = retrieve(test_id, data_loc[4], TOP_K, dim_red=True)
+    m5 = retrieve(test_id, data_loc[5], TOP_K, dim_red=True)
+
+    merger = pd.concat([b["cos_sim"], m1["cos_sim"], m2["cos_sim"], m3["cos_sim"], m4["cos_sim"], m5["cos_sim"]],
+                       axis=1, ignore_index=True)
+
+    merger2 = pd.concat([b["cos_sim"], m1["cos_sim"], m2["cos_sim"], m3["cos_sim"], m4["cos_sim"], m5["cos_sim"]],
+                       axis=1, ignore_index=False)
+    print(merger.head())
+    print(merger.shape)
+    corr = merger.corr(method="spearman")
+    print(corr)
+    sns.heatmap(corr)
+    plt.show()
+
+    print(merger2.head())
+    print(merger2.shape)
+    corr2 = merger2.corr(method="spearman")
+    print(corr2)
+    sns.heatmap(corr2)
+    plt.show()
+
+
+
     # correlation coeff always 1 (almost 1) idk why
     # print(corr_matrix(baseline, m1, m2, m3, m4, m5))
 
@@ -152,24 +183,7 @@ def heat_map(query_set, top_k):
 #
 
 
-# run evaluation routine
-# print("Using tf-idf")
-# print(eval_routine(subset1000, id_tfidf, df_song_info, top_k))
-#
-# print("Using bert embedding")
-# print(eval_routine(subset1000, id_bert, df_song_info, top_k))
-#
-# print("Using blf_spectral")
-# print(eval_routine(subset1000, id_blf_spectral, df_song_info, top_k))
-#
-# print("Using blf_correlation")
-# print(eval_routine(subset1000, id_blf_correlation, df_song_info, top_k))
-# #
-# print("Using resnet")
-# print(eval_routine(subset1000, id_resnet, df_song_info, top_k))
-# #
-# print("Using vgg19")
-# print(eval_routine(subset1000, id_vgg19, df_song_info, top_k))
+
 
 
 # plot_prec_rec(re, m2, m3, top_k)

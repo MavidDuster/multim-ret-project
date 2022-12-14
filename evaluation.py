@@ -49,28 +49,6 @@ def get_rel_set_size(input_genres, df_song_info):
     return len_rel
 
 
-# evaluation metrics used for testing
-def precision_at_k(dfTopIds, topNumber, genres):
-    precision = np.zeros((dfTopIds.shape[0], topNumber))
-    recall = np.zeros((dfTopIds.shape[0], topNumber))
-    precision_max = np.zeros((dfTopIds.shape[0], topNumber))
-
-    for idx, queryId in tqdm(enumerate(dfTopIds.index.values)):
-        topIds = dfTopIds.loc[queryId].values[:topNumber]
-        querySongGenres = genres.loc[[queryId], 'genre'].values[0]
-        topSongsGenres = genres.loc[topIds, 'genre'].values
-        relevant_results = [isResultRelevant(querySongGenres, songGenre) for songGenre in topSongsGenres]
-        REL = np.sum(relevant_results)
-
-        if REL != 0:  # Case when there is no relevant result in the top@K
-            # P[idx] = [(np.sum(relevant_results[:i+1]) / (i+1)) for i in range(topNumber)]
-            precision[idx] = np.divide(np.cumsum(relevant_results, axis=0), np.arange(1, topNumber + 1))
-            # R[idx] = [(np.sum(relevant_results[:i+1]) / (REL)) for i in range(topNumber)]
-            recall[idx] = np.divide(np.cumsum(relevant_results, axis=0), REL)
-            precision_max[idx] = [np.max(precision[idx, i:]) for i, val in enumerate(precision[idx])]
-    return precision, recall, precision_max
-
-
 def precision_score(ret, df_song_info, input_genres, len_rel=27):
     hits = 0
     for index, row in ret.iterrows():
@@ -117,11 +95,11 @@ def ndcg_score(ret, df_song_info, input_genres, top_k: int):
 def mrr_score(ret, df_song_info, input_genres):
     q = 1
     for index, row in ret.iterrows():
+        # repeate till first relevant  song is found
         if len(np.intersect1d(df_song_info.loc[index]["genre"], input_genres)) >= 1:
             break
         else:
             q += 1
-
     return 1 / q
 
 
@@ -168,13 +146,13 @@ def precision_recall_plot(prec_list, recall_list):
     plt.show()
 
 
-def perf_metrics_improved(df_data, df_song_info, subsample, top_k, dim_red=False, n_components=4):
+def perf_metrics_improved(data_loc, df_song_info, subsample, top_k, dim_red=False, n_components=4):
     precision = []
     recall = []
     mrr_sum = 0
     ndcg_sum = 0
 
-    df_data = pd.read_csv(filepath_or_buffer=df_data, delimiter="\t", index_col="id")
+    df_data = pd.read_csv(filepath_or_buffer=data_loc, delimiter="\t", index_col="id")
     # apply dim reduction
     if dim_red:
         df_index = df_data.index
@@ -187,7 +165,7 @@ def perf_metrics_improved(df_data, df_song_info, subsample, top_k, dim_red=False
         q_idx = get_song_id(query, df_song_info)
         ret = retrieval_model2(df_data, q_idx, top_k)
         input_genres = df_song_info.loc[q_idx]["genre"]
-        # len_rel = get_rel_set_size(input_genres, df_song_info)
+        #len_rel = get_rel_set_size(input_genres, df_song_info) # used for recall
         prec, rec = precision_score(ret, df_song_info, input_genres) # input len_rel for plotting
         precision.append(prec)
         recall.append(rec)
@@ -203,6 +181,6 @@ def perf_metrics_improved(df_data, df_song_info, subsample, top_k, dim_red=False
     print(f'The average nDCG @ {top_k} is {avg_ndcg}\n')
 
     # plot
-    #precision_recall_plot(recall, precision)
+    # precision_recall_plot(recall, precision) # looks weird
 
     return avg_prec, avg_mrr, avg_ndcg
