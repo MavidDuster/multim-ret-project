@@ -35,3 +35,5 @@ Our retrival method is found in model.py
 ## Eval
 All evaluation method are found in evaluation.py
 
+
+Experiments were conducted in main.py 
