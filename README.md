@@ -1,4 +1,4 @@
-# multim-ret-project
+# multim-ret-project - Group F
 This project was implemented usning Python 3.9 using the following packages 
 * numpy 
 * pandas
