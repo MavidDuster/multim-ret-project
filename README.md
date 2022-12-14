@@ -1,4 +1,13 @@
 # multim-ret-project
+This project was implemented usning Python 3.9 using the following packages 
+* numpy 
+* pandas
+* mathplotlib
+* sklearn.metrics.pairwise for the similiarity compuation 
+* sklearn.decomposition for PCA
+* ast to deal with strings/lists from the tsv file
+* tqdm
+
 
 ## Overview 
 This repository contains the code and files for the course 344.038, KV Multimedia Search and Retrieval, taught by Markus Schedl, 2022W
