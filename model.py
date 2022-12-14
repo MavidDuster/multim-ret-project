@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.decomposition import PCA
 from sklearn.metrics.pairwise import cosine_similarity
 
-
+# orignal version
 def retrieval_model(id_query, df_lyric_rep):
     """
     given a song this function returns a list of song IDs with similar lyrics

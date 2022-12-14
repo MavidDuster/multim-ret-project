@@ -142,7 +142,7 @@ def precision_recall_plot(prec_list, recall_list):
     plt.figure()
     plt.scatter(recall_list, prec_list)
     plt.xlabel("Recall")
-    plt.ylabel("Precsion")
+    plt.ylabel("Precision")
     plt.show()
 
 

@@ -111,8 +111,7 @@ if __name__ == "__main__":
     sns.heatmap(corr2)
     plt.show()
 
-
-
+    # doesn't work
     # correlation coeff always 1 (almost 1) idk why
     # print(corr_matrix(baseline, m1, m2, m3, m4, m5))
 
