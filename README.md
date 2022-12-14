@@ -26,6 +26,8 @@ We choose to focus on the features from Tf-idf and Bert, Blf_spectral,  Blf_corr
 For sanity reasons we implemented a check if genre information is available, if it isn't entries from the dataset are removed
 {run_check()}
 
+Next we created 3 subsamples for the queries containing 100, 1000 and 10000 queries which were randomly pulled from all 68642 songs. These were than used in the subsequent experiments. 
+
 ## Data Analysis
 Our very simple data analysis can be found in the data_analysis.py
 
