@@ -107,6 +107,9 @@ def relevance(id_query, retrieved_id, df_song_info):
         return 1
 
 
+def precomute
+
+
 # todo precompute all relevance's for all songs
 def create_relevance_matrix(df_song_info):
     """

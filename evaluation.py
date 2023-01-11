@@ -5,6 +5,8 @@ from model import retrieve, retrieval_model2
 from scipy.stats import spearmanr
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
+from sklearn.metrics import precision_score, ndcg_score
+
 
 
 def get_song_genre(song_id, df_song_info):
@@ -49,7 +51,7 @@ def get_rel_set_size(input_genres, df_song_info):
     return len_rel
 
 
-def precision_score(ret, df_song_info, input_genres, len_rel=27):
+def precision_(ret, df_song_info, input_genres, len_rel=27):
     hits = 0
     for index, row in ret.iterrows():
         if len(np.intersect1d(df_song_info.loc[index]["genre"], input_genres)) >= 1:
@@ -58,7 +60,7 @@ def precision_score(ret, df_song_info, input_genres, len_rel=27):
     return hits / len(ret), hits / len_rel
 
 
-def ndcg_score(ret, df_song_info, input_genres, top_k: int):
+def ndcg_(ret, df_song_info, input_genres, top_k: int):
     relevance_scores = np.zeros(top_k)
 
     iter_index = 0
@@ -92,33 +94,16 @@ def ndcg_score(ret, df_song_info, input_genres, top_k: int):
     return dcg / idcg
 
 
-def mrr_score(ret, df_song_info, input_genres):
+def mrr_(ret, df_song_info, input_genres):
     q = 1
     for index, row in ret.iterrows():
-        # repeate till first relevant  song is found
+        # repeat till first relevant  song is found
         if len(np.intersect1d(df_song_info.loc[index]["genre"], input_genres)) >= 1:
             break
         else:
             q += 1
     return 1 / q
 
-
-def pairwise_corr(ret_df1, ret_df2):
-    rho, p = spearmanr(ret_df1["cos_sim"], ret_df2["cos_sim"])
-    return rho, p
-
-
-def corr_matrix(baseline, m1, m2, m3, m4, m5):
-    ret_list = [baseline, m1, m2, m3, m4, m5]
-    corr = []
-    for ret_df1 in ret_list:
-        temp = []
-        for ret_df2 in ret_list:
-            rho, p = pairwise_corr(ret_df1, ret_df2)
-            temp.append((rho, p))
-        corr.append(temp)
-
-    return corr
 
 
 def plot_prec_rec(m1, m2, m3, top_k, df_song_info):
@@ -146,7 +131,7 @@ def precision_recall_plot(prec_list, recall_list):
     plt.show()
 
 
-def perf_metrics_improved(data_loc, df_song_info, subsample, top_k, dim_red=False, n_components=4):
+def perf_metrics_improved(data_loc, df_song_info, subsample, top_k, dim_red=False, n_components=40):
     precision = []
     recall = []
     mrr_sum = 0
@@ -165,22 +150,89 @@ def perf_metrics_improved(data_loc, df_song_info, subsample, top_k, dim_red=Fals
         q_idx = get_song_id(query, df_song_info)
         ret = retrieval_model2(df_data, q_idx, top_k)
         input_genres = df_song_info.loc[q_idx]["genre"]
-        #len_rel = get_rel_set_size(input_genres, df_song_info) # used for recall
-        prec, rec = precision_score(ret, df_song_info, input_genres) # input len_rel for plotting
+        # len_rel = get_rel_set_size(input_genres, df_song_info) # used for recall
+        prec, rec = precision_(ret, df_song_info, input_genres)  # input len_rel for plotting
         precision.append(prec)
         recall.append(rec)
-        mrr_sum += mrr_score(ret, df_song_info, input_genres)
-        ndcg_sum += ndcg_score(ret, df_song_info, input_genres, top_k)
+        mrr_sum += mrr_(ret, df_song_info, input_genres)
+        ndcg_sum += ndcg_(ret, df_song_info, input_genres, top_k)
 
     nsongs = len(subsample)
     avg_prec = sum(precision) / nsongs
     avg_mrr = mrr_sum / nsongs
     avg_ndcg = ndcg_sum / nsongs
-    print(f'The average precison @ {top_k} is {avg_prec}')
-    print(f'The average MRR @ {top_k} is {avg_mrr}')
-    print(f'The average nDCG @ {top_k} is {avg_ndcg}\n')
+    #print(f'The average precison @ {top_k} is {avg_prec}')
+    #print(f'The average MRR @ {top_k} is {avg_mrr}')
+    #print(f'The average nDCG @ {top_k} is {avg_ndcg}\n')
 
     # plot
     # precision_recall_plot(recall, precision) # looks weird
-
     return avg_prec, avg_mrr, avg_ndcg
+
+
+def heat_map(query_set, top_k):
+    ap_Base, mrr_Base, ndcg_Base = eval_routine(query_set, baseline['cos_sim'], df_song_info, top_k)
+    ap_M1, mrr_M1, ndcg_M1 = eval_routine(query_set, m1['cos_sim'], df_song_info, top_k)
+    ap_M2, mrr_M2, ndcg_M2 = eval_routine(query_set, m2['cos_sim'], df_song_info, top_k)
+    ap_M3, mrr_M3, ndcg_M3 = eval_routine(query_set, m3['cos_sim'], df_song_info, top_k)
+    ap_M4, mrr_M4, ndcg_M4 = eval_routine(query_set, m4['cos_sim'], df_song_info, top_k)
+    ap_M5, mrr_M5, ndcg_M5 = eval_routine(query_set, m5['cos_sim'], df_song_info, top_k)
+
+    # Heat map
+
+    average = ["AP", "MRR", "NDCG"]
+    models = ["TF-IDF", "BERT", "BLF Spectral", "BLF Correlation", "ResNet", "VGG19"]
+
+    arr_base = [ap_Base, mrr_Base, ndcg_Base]
+    arr_m1 = [ap_M1, mrr_M1, ndcg_M1]
+    arr_m2 = [ap_M2, mrr_M2, ndcg_M2]
+    arr_m3 = [ap_M3, mrr_M3, ndcg_M3]
+    arr_m4 = [ap_M4, mrr_M4, ndcg_M4]
+    arr_m5 = [ap_M5, mrr_M5, ndcg_M5]
+
+    heat = np.array([arr_base, arr_m1, arr_m2, arr_m3, arr_m4, arr_m5])
+
+    fig, ax = plt.subplots()
+    im = ax.imshow(heat)
+
+    # Show all ticks and label them with the respective list entries
+    ax.set_xticks(np.arange(len(models)), labels=models)
+    ax.set_yticks(np.arange(len(average)), labels=average)
+
+    # Rotate the tick labels and set their alignment.
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+
+    # Loop over data dimensions and create text annotations.
+    for i in range(len(average)):
+        for j in range(len(models)):
+            text = ax.text(j, i, heat[i, j], ha="center", va="center", color="w")
+
+    ax.set_title("Evaluation Heat Map")
+    fig.tight_layout()
+    plt.show()
+
+
+def eval_routine(df_data, df_song_info, subsample, top_k):
+    precision = []
+    recall = []
+    mrr_sum = 0
+    ndcg_sum = 0
+
+    for query in tqdm(subsample):
+        q_idx = get_song_id(query, df_song_info)
+        ret = retrieval_model2(df_data, q_idx, top_k)
+        input_genres = df_song_info.loc[q_idx]["genre"]
+
+        prec, rec = precision_(ret, df_song_info, input_genres)  # input len_rel for plotting
+        precision.append(prec)
+        recall.append(rec)
+        mrr_sum += mrr_(ret, df_song_info, input_genres)
+        ndcg_sum += ndcg_(ret, df_song_info, input_genres, top_k)
+
+    nsongs = len(subsample)
+    avg_prec = sum(precision) / nsongs
+    avg_mrr = mrr_sum / nsongs
+    avg_ndcg = ndcg_sum / nsongs
+    return avg_prec, avg_mrr, avg_ndcg
+
+
